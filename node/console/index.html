@@ -1,0 +1,185 @@
+<script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" />
+
+<script>
+	var socket;
+	socket = io('https://fosse.co', {
+		path: '/8110/socket.io'
+	});
+// 	socket = io('fosse.co:8080');
+	//socket = io("http://fosse.co:80");
+	//socket = io("http://fosse.co:80/8110/socket.io");
+</script>
+
+
+<html>
+
+
+<style>
+	body {
+		padding: 4%;
+	}
+
+	#console {
+		float: left;
+		width: 20%;
+		overflow: auto;
+		height: 80vh;
+		/*outline: 4px solid black;*/
+		/*background-color: Red;*/
+	}
+
+	#picture {
+/* 		margin-left: 20%; */
+	}
+
+	#namesList {
+		width: 80%;
+		height: 100px;
+		overflow: auto;
+	}
+</style>
+
+<body>
+
+	<div id="container">
+
+<!-- 		<div id="console">
+			
+			<br> target:
+			<br>
+			<input id="directedTarget" type="text" placeholder="name" value="Matt">
+			<br> update rate:
+			<br>
+			<input id="directedUpdateRate" type="number" value="100">
+			<br> quality:
+			<br>
+			<input id="directedQuality" type="number" value="10">
+      
+      
+			<br>
+			<form id="getImageForm">
+				<button>Get Image</button>
+			</form>
+
+			<br>
+			<form id="listAllForm">
+				<button>List All Connected Clients:</button>
+			</form>
+
+			<div id="namesList" class="list-group">
+			</div>
+
+		</div> -->
+
+
+
+		<div id="picture" oncontextmenu="return false">
+		</div>
+
+	</div>
+
+</body>
+
+</html>
+
+<script>
+	var globalEventTimer = false;
+
+	function directedGetImage(user, quality) {
+		var data = {};
+		data.user = user;
+		data.quality = quality;
+		socket.emit("directedGetImage", data);
+	}
+
+
+	// all:
+
+	$("#getImageForm").on("submit", function(event) {
+		event.preventDefault();
+		socket.emit("getImage");
+	});
+
+
+
+	// directed:
+
+
+	$("#directedGetImageForm").on("submit", function(event) {
+		event.preventDefault();
+
+		//var user = $("#directedGetImageUser").val();
+		var user = $("#directedTarget").val();
+		directedGetImage(user);
+	});
+
+
+
+	// other:
+
+	//   $("#getNamesform").on("submit", function(event) {
+	//     event.preventDefault();
+	//     socket.emit("getNames");
+	//   });
+
+	$("#listAllForm").on("submit", function(event) {
+		event.preventDefault();
+		socket.emit("listAll");
+	});
+
+	socket.on("names", function(data) {
+		$("#namesList").empty();
+		for (var i = 0; i < data.length; i++) {
+			var div = $("<div class='list-group-item'>" + data[i] + "</div>");
+			$("#namesList").append(div);
+
+			$("#namesList").last().on("click", function(event) {
+				var name = $(event.target).text();
+				$("#directedTarget").val(name);
+				//directedGetImage(name);
+			});
+		}
+	});
+
+
+	function getMeta(url, callback) {
+		var img = new Image();
+		img.src = url;
+		img.onload = function() {
+			callback(this.width, this.height);
+		}
+	}
+
+
+	socket.on("viewImage", function(data) {
+		
+		var src = "data:image/jpeg;base64," + data.src;
+
+		var image = new Image();
+		image.src = src;
+		image.style = "max-width:100%; height:auto;";
+		image.id = "screenshot";
+		$("#picture").empty();
+		$("#picture").append(image);
+	});
+
+
+	setInterval(function() {
+		globalEventTimer = false;
+	}, 100);
+
+	function updateImage() {
+		var user = $("#directedTarget").val();
+		var quality = $("#directedQuality").val();
+		directedGetImage(user, quality);
+		setTimeout(updateImage, $("#directedUpdateRate").val());
+	}
+	//updateImage();
+
+// 	setInterval(function() {
+// 		var user = $("#directedTarget").val();
+// 		directedGetImage(user);
+// 	}, 100);
+</script>
